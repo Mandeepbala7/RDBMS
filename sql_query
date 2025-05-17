@@ -1,0 +1,114 @@
+-- Create database and use it
+CREATE DATABASE IF NOT EXISTS EmployeePayroll;
+USE EmployeePayroll;
+
+-- Department Table
+CREATE TABLE Department(
+    department_id INT PRIMARY KEY,
+    department_name VARCHAR(100)
+);
+
+-- Employee Table
+CREATE TABLE Employee (
+    employee_id INT PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    gender ENUM('Male', 'Female', 'Other'),
+    email VARCHAR(100),
+    phone VARCHAR(15),
+    address VARCHAR(255),
+    hire_date DATE,
+    job_title VARCHAR(100),
+    salary_type ENUM('Monthly', 'Hourly'),
+    department_id INT,
+    FOREIGN KEY (department_id) REFERENCES Department(department_id)
+);
+
+-- Salary Table
+CREATE TABLE Salary (
+    salary_id INT PRIMARY KEY,
+    employee_id INT,
+    salary_month VARCHAR(10),
+    base_salary DECIMAL(10,2),
+    hra DECIMAL(10,2),
+    ta DECIMAL(10,2),
+    da DECIMAL(10,2),
+    deductions DECIMAL(10,2),
+    net_salary DECIMAL(10,2),
+    bonus DECIMAL(10,2),
+    FOREIGN KEY (employee_id) REFERENCES Employee(employee_id)
+);
+
+-- Attendance Table
+CREATE TABLE Attendance (
+    employee_id INT,
+    date DATE,
+    status ENUM('Present','Absent'),
+    working_hours DECIMAL(4,2),
+    leave_type VARCHAR(50),
+    PRIMARY KEY (employee_id, date),
+    FOREIGN KEY (employee_id) REFERENCES Employee(employee_id)
+);
+
+-- Payment Table
+CREATE TABLE Payment (
+    payment_id INT PRIMARY KEY,
+    salary_id INT,
+    payment_date DATE,
+    payment_status ENUM('Paid','Unpaid'),
+    mode_of_payment ENUM('Cash', 'Bank Transfer', 'UPI', 'Cheque'),
+    FOREIGN KEY (salary_id) REFERENCES Salary(salary_id)
+);
+
+-- Insert sample data into Department
+INSERT INTO Department VALUES 
+(1, 'HR'), 
+(2, 'Engineering'), 
+(3, 'Finance');
+
+-- Insert sample data into Employee
+INSERT INTO Employee VALUES
+(101, 'Alice', 'Smith', 'Female', 'alice@example.com', '1234567890', '123 Main St', '2021-05-01', 'HR Manager', 'Monthly', 1),
+(102, 'Bob', 'Johnson', 'Male', 'bob@example.com', '9876543210', '456 Oak St', '2022-01-10', 'Software Engineer', 'Monthly', 2);
+
+-- Insert sample data into Salary (now with bonus)
+INSERT INTO Salary VALUES
+(1, 101, 'May', 50000, 5000, 2000, 3000, 1000, 59000, 2000),
+(2, 102, 'May', 60000, 6000, 3000, 4000, 1500, 71500, 1500);
+
+-- Insert sample data into Attendance
+INSERT INTO Attendance VALUES
+(101, '2025-05-01', 'Present', 8.00, NULL),
+(102, '2025-05-01', 'Absent', 0.00, 'Sick Leave');
+
+-- Insert sample data into Payment
+INSERT INTO Payment VALUES
+(1, 1, '2025-05-31', 'Paid', 'Bank Transfer'),
+(2, 2, '2025-05-31', 'Unpaid', 'UPI');
+
+-- Optional Query: Attendance Summary
+SELECT 
+    employee_id,
+    COUNT(*) AS present_days
+FROM Attendance
+WHERE status = 'Present'
+GROUP BY employee_id;
+
+-- Optional Query: Payslip Generation Report
+SELECT 
+    e.employee_id,
+    CONCAT(e.first_name, ' ', e.last_name) AS employee_name,
+    s.salary_month,
+    s.base_salary,
+    s.hra,
+    s.ta,
+    s.da,
+    s.deductions,
+    s.bonus,
+    s.net_salary,
+    p.payment_date,
+    p.payment_status,
+    p.mode_of_payment
+FROM Employee 
+JOIN Salary s ON e.employee_id = s.employee_id
+JOIN Payment p ON s.salary_id = p.salary_id;
